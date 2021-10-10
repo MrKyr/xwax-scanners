@@ -23,112 +23,115 @@
 #include <tag_c.h>
 
 typedef struct {
-	char *extension;
-	enum {
-		HAS_METADATA,
-		NO_METADATA
-	} metadata;
-	regex_t *regex;
+    char *extension;
+    enum {
+        HAS_METADATA,
+        NO_METADATA
+    } metadata;
+    regex_t *regex;
 } filetype_t;
 
 filetype_t filetypes[] = {
-	{"mp3$",  HAS_METADATA, NULL},
-	{"ogg$",  HAS_METADATA, NULL},
-	{"flac$", HAS_METADATA, NULL},
-	{"mp4$",  HAS_METADATA, NULL},
-	{"wav$",  NO_METADATA,  NULL},
-	{NULL}
+    {"mp3$",  HAS_METADATA, NULL},
+    {"ogg$",  HAS_METADATA, NULL},
+    {"flac$", HAS_METADATA, NULL},
+    {"mp4$",  HAS_METADATA, NULL},
+    {"wav$",  NO_METADATA,  NULL},
+    {NULL}
 };
 
 int print_metadata(const char *fbuf, char *basename) {
-	filetype_t *cursor = filetypes;
-	char *title, *artist;
+    filetype_t *cursor = filetypes;
+    char *title, *artist, *key;
+    int bpm;
 
-	TagLib_File *tfile;
-	TagLib_Tag *tag;
+    TagLib_File *tfile;
+    TagLib_Tag *tag;
 
-	do {
-		if( !regexec(cursor->regex, fbuf, 0, NULL, 0) ) {
-			if( !(tfile = taglib_file_new(fbuf)) )
-				return 1;
+    do {
+        if( !regexec(cursor->regex, fbuf, 0, NULL, 0) ) {
+            if( !(tfile = taglib_file_new(fbuf)) )
+                return 1;
 
-			tag = taglib_file_tag(tfile);
-			artist = taglib_tag_artist(tag);
-			title = taglib_tag_title(tag);
+            tag = taglib_file_tag(tfile);
+            artist = taglib_tag_artist(tag);
+            title = taglib_tag_title(tag);
+            bpm = taglib_tag_bpm(tag);
+            key = taglib_tag_key(tag);
 
-			if( !*title )
-				title = basename;
+            if( !*title )
+                title = basename;
 
-			printf("%s\t%s\t%s\n", fbuf, artist, title);
+            printf("%s\t%s\t%s\t%s\t%d\n", fbuf, artist, title, key, bpm);
 
-			taglib_tag_free_strings();
-			taglib_file_free(tfile);
+            taglib_tag_free_strings();
+            taglib_file_free(tfile);
 
-			return 0;
-		}
-	} while( (++cursor)->extension );
+            return 0;
+        }
+    } while( (++cursor)->extension );
 
-	return 1;
+    return 1;
 }
 
 int pdir(const char *dir, int skipdotfiles) {
-	DIR *ectory;
-	struct dirent *ent;
-	struct stat file;
-	char *fbuf, *dbuf;
+    DIR *ectory;
+    struct dirent *ent;
+    struct stat file;
+    char *fbuf, *dbuf;
 
 
-	ectory = opendir(dir);
-	dbuf = realpath(dir, NULL);
+    ectory = opendir(dir);
+    dbuf = realpath(dir, NULL);
 
-	while( (ent = readdir(ectory)) ) {
-		if( (ent->d_name[0] == '.' && (!ent->d_name[1] || skipdotfiles)) ||
-			(ent->d_name[1] == '.' && !ent->d_name[2]) )
-			continue;
+    while( (ent = readdir(ectory)) ) {
+        if( (ent->d_name[0] == '.' && (!ent->d_name[1] || skipdotfiles)) ||
+                (ent->d_name[1] == '.' && !ent->d_name[2]) )
+            continue;
 
-		asprintf(&fbuf, "%s/%s", dbuf, ent->d_name);
+        asprintf(&fbuf, "%s/%s", dbuf, ent->d_name);
 
-		stat(fbuf, &file);
+        stat(fbuf, &file);
 
-		switch( file.st_mode & S_IFMT ) {
-		case S_IFREG:
-			print_metadata(fbuf, ent->d_name);
-			break;
+        switch( file.st_mode & S_IFMT ) {
+            case S_IFREG:
+                print_metadata(fbuf, ent->d_name);
+                break;
 
-		case S_IFDIR:
-			pdir(fbuf, skipdotfiles);
-			break;
-		}
+            case S_IFDIR:
+                pdir(fbuf, skipdotfiles);
+                break;
+        }
 
-		free(fbuf);
-	}
+        free(fbuf);
+    }
 
-	free(dbuf);
-	closedir(ectory);
+    free(dbuf);
+    closedir(ectory);
 
-	return 0;
+    return 0;
 }
 
 void init_regexes(filetype_t *types) {
-	filetype_t *cursor = types;
+    filetype_t *cursor = types;
 
-	do {
-		cursor->regex = calloc(1, sizeof(regex_t));
+    do {
+        cursor->regex = calloc(1, sizeof(regex_t));
 
-		if( regcomp(cursor->regex, cursor->extension, 0) ) {
-			free(cursor->regex);
-			printf("error compiling regex \"%s\"\n", cursor->extension);
-		}
-	} while( (++cursor)->extension );
+        if( regcomp(cursor->regex, cursor->extension, 0) ) {
+            free(cursor->regex);
+            printf("error compiling regex \"%s\"\n", cursor->extension);
+        }
+    } while( (++cursor)->extension );
 }
 
 int main(int argc, char **argv) {
-	if( argc != 2 )
-		return 1;
+    if( argc != 2 )
+        return 1;
 
-	init_regexes(filetypes);
-	
-	pdir(argv[1], 0);
+    init_regexes(filetypes);
 
-	return 0;
+    pdir(argv[1], 0);
+
+    return 0;
 }
