@@ -5,12 +5,12 @@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	OSFLAG = /usr/include/taglib
-	DLFLAG = taglib-scanner
+	DLFLAG = music-scan
 endif
 ifeq ($(UNAME_S),Darwin)
 	OSFLAG = /usr/local/include/taglib
-	DLFLAG = taglib-scanner
-	DLFLAG += taglib-scanner.dSYM
+	DLFLAG = music-scan
+	DLFLAG += music-scan.dSYM
 endif
 
 all:
