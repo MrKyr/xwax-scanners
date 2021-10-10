@@ -42,11 +42,12 @@ filetype_t filetypes[] = {
 
 int print_metadata(const char *fbuf, char *basename) {
     filetype_t *cursor = filetypes;
-    char *title, *artist, *key;
-    int bpm;
+    char *title, *artist, *genre, *key, *album, *comments, *grouping;
+    int year, bitrate, bpm, track;
 
     TagLib_File *tfile;
     TagLib_Tag *tag;
+    const TagLib_AudioProperties *prop;
 
     do {
         if( !regexec(cursor->regex, fbuf, 0, NULL, 0) ) {
@@ -54,15 +55,23 @@ int print_metadata(const char *fbuf, char *basename) {
                 return 1;
 
             tag = taglib_file_tag(tfile);
+            prop = taglib_file_audioproperties(tfile);
             artist = taglib_tag_artist(tag);
             title = taglib_tag_title(tag);
-            bpm = taglib_tag_bpm(tag);
+            genre = taglib_tag_genre(tag);
+            album = taglib_tag_album(tag);
+            year = taglib_tag_year(tag);
+            track = taglib_tag_track(tag);
             key = taglib_tag_key(tag);
+            bpm = taglib_tag_bpm(tag);
+            comments = taglib_tag_comment(tag);
+            grouping = taglib_tag_grouping(tag);
+            bitrate = taglib_audioproperties_bitrate(prop);
 
             if( !*title )
                 title = basename;
 
-            printf("%s\t%s\t%s\t%s\t%d\n", fbuf, artist, title, key, bpm);
+            printf(",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\",\"%d\",\"%s\"\n", fbuf, artist, title, album, genre, year, track, key, bpm, grouping, bitrate, comments);
 
             taglib_tag_free_strings();
             taglib_file_free(tfile);
