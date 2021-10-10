@@ -14,7 +14,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 all:
-	gcc -ggdb -Wall -Werror -pedantic -I$(OSFLAG) -ltag_c taglib-scanner.c -o taglib-scanner
+	gcc -ggdb -Wall -Werror -pedantic -I$(OSFLAG) -ltag_c taglib-scanner.c -o music-scan
 
 clean:
 	rm -r $(DLFLAG)
