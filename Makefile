@@ -18,3 +18,13 @@ all:
 
 clean:
 	rm -r $(DLFLAG)
+
+install:
+	install -d $(DESTDIR)/usr/local/bin/
+	install -m 755 xwax-scan $(DESTDIR)/usr/local/bin/
+
+link:
+	brew link 
+
+uninstall:
+	rm /usr/local/bin/xwax-scan
